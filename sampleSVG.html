@@ -1,0 +1,168 @@
+<html>
+
+<head>
+<style>
+.connector{
+	fill:none;
+	stroke: #000;
+	stroke-width: 1px;
+	marker-end:url(#ArrowEnd)
+}
+
+.if>:first-child, rect{
+	fill:#333;
+	transition:fill 6s;
+}
+
+svg text{
+	fill:#CCC;
+	font-size:16px;
+	font-family:monospace;
+	text-anchor:middle;
+}
+</style>
+</head>
+
+
+
+<body>
+
+<svg id="mainSVG" style="height:2000px;">
+  <defs>
+    <marker
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="ArrowEnd"
+       style="overflow:visible">
+      <path
+         id="path3836"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt;"
+         transform="scale(0.8) rotate(180) translate(12.5,0)" />
+    </marker>
+  </defs>
+</svg>
+
+<script src="javascript.js"></script>
+<script src="sample_code.json"></script>
+<script>
+/*
+var a= new Node('function', 'START');
+a.startNode();
+var b = new Node('statement', 'working');
+a.addChild(b);
+b.addChild(new Node('if', 'working more'));
+b.children[0].addChild(new Node('if', 'ever working'));
+b.children[0].addChild(new Node('if', 'Hello'));
+b.children[0].children[0].addChild(new Node('if', 'Hello'));
+b.children[0].children[0].addChild(new Node('if', 'Hello'));
+b.children[0].children[1].addChild(new Node('if', 'Hello'));
+*/
+
+
+
+function makeFromJson(code){
+	window.main = new Node(code.type, code.code);
+	main.startNode();
+	var parentNode = main;
+	//var ifsToEnd = [];
+	for(var i = 0; i < code.inner.length; i++){
+		console.log(code.inner[i].type);
+		
+		parentNode.addChild(new Node(code.inner[i].type, code.inner[i].code));
+		parentNode = parentNode.children[parentNode.children.length-1];
+
+		if(code.inner[i].inner.length > 0) makeFromJson_helper(code.inner[i], parentNode);
+	}
+}
+window.ends = [];
+function makeFromJson_helper(code, parentNode){
+
+	for(var i = 0; i < code.inner.length; i++){
+		if (TRACE) console.log("helper: " + code.inner[i].type + "("+code.inner[i].code+") to " + parentNode.type + "("+parentNode.code+")");
+		
+		parentNode.addChild(new Node(code.inner[i].type, code.inner[i].code));
+		parentNode = parentNode.children[0];
+		if(code.inner[i].inner.length > 0) makeFromJson_helper(code.inner[i], parentNode);
+		if(i === code.inner.length-1 && code.inner[i].inner.length == 0) ends = ends.concat(parentNode);
+	}
+}
+
+function closeIfs(node){
+console.log("endings" +ends);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+function closeIfs(node){
+	if(node.children.length === 0){
+		if(TRACE) console.log("Finished closeIfs");
+		return;
+	}
+	
+	for(var i = 0; i < node.children.length; i++){
+		if(node.children[i].type == 'if' || node.children[i].type == 'else if'){
+			if(TRACE) console.log("Found if/elseif: " + node.children[i].type + "("+node.children[i].code+")");
+			getIfEnd(node.children[i].children[0]);
+			closeIfs(node.children[i].children[1]);
+		} else {
+			closeIfs(node.children[i]);
+		}
+	}
+}
+
+function getIfEnd(node){
+	if (TRACE) console.log("getIfEnd called on " +node.type+"("+node.code+")");
+	if(node.children.length === 0){
+		if(TRACE) console.log("If end found");
+		ifGetLink(node);
+	}
+	for(var i = 0; i < node.children.length; i++){
+		if(node.children[i].type == 'if' || node.children[i].type == 'else if'){
+			getIfEnd(node.children[i].children[0], node.children[i]);
+		}
+	}
+}
+
+function ifGetLink(node){
+	if (TRACE) console.log("ifGetLink called on " +node.type+"("+node.code+")");
+	console.log(node.parent[0]);
+	var tmp = findFirstLeft(node.parent[0], endOfIf);
+	if(tmp){
+		if (TRACE) console.log("Link found: " + tmp.type +"("+tmp.code+")");
+		return tmp.connectToChild(node);
+	}
+	else ifGetLink(node.parent[0]);
+}
+
+function endOfIf(node){
+	return (node.type !== 'if' && node.type !== 'else if' && node.type !== 'else');
+}
+
+function findFirstLeft(node, pred){
+	if(node.children.length === 0) return false;
+	if(pred(node.children[node.children.length-1])) return node.children[node.children.length-1];
+	else findFirstLeft(node.children[node.children.length-1], pred)
+}*/
+makeFromJson(code);
+console.debug("FIXING IFS");
+closeIfs(main);
+
+</script>
+
+</body>
+
+</html>
